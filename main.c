@@ -12,8 +12,11 @@ gcc main.c -o compile_shader -lGLESv2 `sdl2-config --cflags --libs`
 
 #ifdef GLES
 #include <GLES/gl.h>
+#define HEADER_SCRIPT "#version 300 es\nprecision highp float;\n"
 #else
 #include <GL/gl.h>
+// #define HEADER_SCRIPT "#version 120\n"
+#define HEADER_SCRIPT "#version 330\n"
 #endif
 
 #include <SDL2/SDL.h>
@@ -28,9 +31,26 @@ gcc main.c -o compile_shader -lGLESv2 `sdl2-config --cflags --libs`
 #define GL_COMPILE_STATUS 0x8B81
 #define GL_INFO_LOG_LENGTH 0x8B84
 
+void glCompileShader(GLuint shader);
+GLuint glCreateShader(GLenum shaderType);
+void glDeleteShader(GLuint shader);
+void glGetShaderInfoLog(GLuint shader,
+						GLsizei maxLength,
+						GLsizei *length,
+						GLchar *infoLog);
+void glShaderSource(GLuint shader,
+					GLsizei count,
+					const GLchar *const *string,
+					const GLint *length);
+void glGetShaderiv(GLuint shader,
+				   GLenum pname,
+				   GLint *params);
+int chdir(const char *path);
+
 // Function to read shader source from a file
 char *readShaderSource(const char *shaderFile)
 {
+	long header_length = strlen(HEADER_SCRIPT);
 	FILE *file = fopen(shaderFile, "rb");
 	if (!file)
 	{
@@ -40,9 +60,10 @@ char *readShaderSource(const char *shaderFile)
 	fseek(file, 0, SEEK_END);
 	long length = ftell(file);
 	fseek(file, 0, SEEK_SET);
-	char *source = (char *)malloc(length + 1);
-	fread(source, 1, length, file);
-	source[length] = '\0';
+	char *source = (char *)malloc(header_length+length + 1);
+	strcpy(source, HEADER_SCRIPT);
+	fread(source + header_length, 1, length, file);
+	source[length + header_length] = '\0';
 	fclose(file);
 	return source;
 }
@@ -112,7 +133,7 @@ int main(int argc, char *argv[])
 {
 	// Open the directory specified by the user
 	const char *user_dir = argc >= 2 ? argv[1] : ".";
-	printf("Tool for testing compilation of shader in directory '%s'\n", user_dir);
+	printf("Tool for shader testing compilation in directory '%s'\n", user_dir);
 
 	// Initialize SDL
 	if (SDL_Init(SDL_INIT_VIDEO) < 0)
@@ -131,7 +152,12 @@ int main(int argc, char *argv[])
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 2);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 1);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
-						SDL_GL_CONTEXT_PROFILE_CORE);
+						SDL_GL_CONTEXT_PROFILE_COMPATIBILITY);
+
+	// SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+	// SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+	// SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK,
+	// 					SDL_GL_CONTEXT_PROFILE_CORE);
 #endif
 
 	// Create a window with an OpenGL context
