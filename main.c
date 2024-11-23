@@ -13,6 +13,9 @@ gcc main.c -o compile_shader -lGLESv2 `sdl2-config --cflags --libs`
 #ifdef GLES
 #include <GLES/gl.h>
 #define HEADER_SCRIPT "#version 300 es\nprecision highp float;\n"
+#elif defined RG353P
+#include <GLES2/gl2.h>
+#define HEADER_SCRIPT "#version 300 es\nprecision mediump float;\n"
 #else
 #include <GL/gl.h>
 // #define HEADER_SCRIPT "#version 120\n"
@@ -113,7 +116,7 @@ void printOpenGLInfo()
 
 	if (vendor && renderer && version)
 	{
-#ifdef GLES
+#if defined(GLES) || defined(RG353P)
 		printf("OpenGL ES Vendor   : %s\n", vendor);
 		printf("OpenGL ES Renderer : %s\n", renderer);
 		printf("OpenGL ES Version  : %s\n", version);
@@ -141,7 +144,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "Failed to initialize SDL: %s\n", SDL_GetError());
 		return -1;
 	}
-#ifdef GLES
+#if defined(GLES) || defined(RG353P)
 	// Set SDL to use an OpenGLES context (version 3.0)
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
@@ -189,7 +192,7 @@ int main(int argc, char *argv[])
 	printOpenGLInfo();
 
 	chdir(user_dir);
-	DIR *dir = opendir(user_dir);
+	DIR *dir = opendir(".");
 	if (dir == NULL)
 	{
 		perror("Unable to open directory");
